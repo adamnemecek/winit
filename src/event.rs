@@ -792,11 +792,11 @@ pub enum MouseScrollDelta {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum Gesture {
     /// Factor of magnification
-    Magnify(f32),
+    Magnify(f64),
     /// Represents degress of rotation, counterclockwise
     Rotate(f32),
     /// Direction of swipe
-    Swipe(f32, f32)
+    Swipe(f64, f64)
 }
 
 /// Symbolic name for a keyboard key.
