@@ -132,7 +132,7 @@ impl State {
 // mouse movements prior to activation are the cause of this quirk, they should
 // be a reliable way to determine if the hack needs to be performed.
 pub extern "C" fn mouse_moved(this: &Object, _: Sel, _: id) {
-    trace!("Triggered `activationHackMouseMoved`");
+    //trace!("Triggered `activationHackMouseMoved`");
     unsafe {
         if !State::get_activated(this) {
             // We check if `CFBundleName` is undefined to determine if the
@@ -145,7 +145,7 @@ pub extern "C" fn mouse_moved(this: &Object, _: Sel, _: id) {
             }
         }
     }
-    trace!("Completed `activationHackMouseMoved`");
+    //trace!("Completed `activationHackMouseMoved`");
 }
 
 // Switch focus to the dock.

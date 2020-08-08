@@ -160,3 +160,8 @@ mod platform_impl;
 pub mod window;
 
 pub mod platform;
+
+// #[macro_use]
+// macro_rules! xlog {
+//     (*) => ()
+// }

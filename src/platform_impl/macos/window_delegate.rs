@@ -262,14 +262,14 @@ extern "C" fn init_with_winit(this: &Object, _sel: Sel, state: *mut c_void) -> i
 }
 
 extern "C" fn window_should_close(this: &Object, _: Sel, _: id) -> BOOL {
-    trace!("Triggered `windowShouldClose:`");
+    //trace!("Triggered `windowShouldClose:`");
     with_state(this, |state| state.emit_event(WindowEvent::CloseRequested));
-    trace!("Completed `windowShouldClose:`");
+    //trace!("Completed `windowShouldClose:`");
     NO
 }
 
 extern "C" fn window_will_close(this: &Object, _: Sel, _: id) {
-    trace!("Triggered `windowWillClose:`");
+    //trace!("Triggered `windowWillClose:`");
     with_state(this, |state| unsafe {
         // `setDelegate:` retains the previous value and then autoreleases it
         let pool = NSAutoreleasePool::new(nil);
@@ -279,47 +279,47 @@ extern "C" fn window_will_close(this: &Object, _: Sel, _: id) {
         pool.drain();
         state.emit_event(WindowEvent::Destroyed);
     });
-    trace!("Completed `windowWillClose:`");
+    //trace!("Completed `windowWillClose:`");
 }
 
 extern "C" fn window_did_resize(this: &Object, _: Sel, _: id) {
-    trace!("Triggered `windowDidResize:`");
+    //trace!("Triggered `windowDidResize:`");
     with_state(this, |state| {
         state.emit_resize_event();
         state.emit_move_event();
     });
-    trace!("Completed `windowDidResize:`");
+    //trace!("Completed `windowDidResize:`");
 }
 
 // This won't be triggered if the move was part of a resize.
 extern "C" fn window_did_move(this: &Object, _: Sel, _: id) {
-    trace!("Triggered `windowDidMove:`");
+    //trace!("Triggered `windowDidMove:`");
     with_state(this, |state| {
         state.emit_move_event();
     });
-    trace!("Completed `windowDidMove:`");
+    //trace!("Completed `windowDidMove:`");
 }
 
 extern "C" fn window_did_change_backing_properties(this: &Object, _: Sel, _: id) {
-    trace!("Triggered `windowDidChangeBackingProperties:`");
+    //trace!("Triggered `windowDidChangeBackingProperties:`");
     with_state(this, |state| {
         state.emit_static_scale_factor_changed_event();
     });
-    trace!("Completed `windowDidChangeBackingProperties:`");
+    //trace!("Completed `windowDidChangeBackingProperties:`");
 }
 
 extern "C" fn window_did_become_key(this: &Object, _: Sel, _: id) {
-    trace!("Triggered `windowDidBecomeKey:`");
+    //trace!("Triggered `windowDidBecomeKey:`");
     with_state(this, |state| {
         // TODO: center the cursor if the window had mouse grab when it
         // lost focus
         state.emit_event(WindowEvent::Focused(true));
     });
-    trace!("Completed `windowDidBecomeKey:`");
+    //trace!("Completed `windowDidBecomeKey:`");
 }
 
 extern "C" fn window_did_resign_key(this: &Object, _: Sel, _: id) {
-    trace!("Triggered `windowDidResignKey:`");
+    //trace!("Triggered `windowDidResignKey:`");
     with_state(this, |state| {
         // It happens rather often, e.g. when the user is Cmd+Tabbing, that the
         // NSWindowDelegate will receive a didResignKey event despite no event
@@ -346,12 +346,12 @@ extern "C" fn window_did_resign_key(this: &Object, _: Sel, _: id) {
 
         state.emit_event(WindowEvent::Focused(false));
     });
-    trace!("Completed `windowDidResignKey:`");
+    //trace!("Completed `windowDidResignKey:`");
 }
 
 /// Invoked when the dragged image enters destination bounds or frame
 extern "C" fn dragging_entered(this: &Object, _: Sel, sender: id) -> BOOL {
-    trace!("Triggered `draggingEntered:`");
+    //trace!("Triggered `draggingEntered:`");
 
     use cocoa::{appkit::NSPasteboard, foundation::NSFastEnumeration};
     use std::path::PathBuf;
@@ -373,20 +373,20 @@ extern "C" fn dragging_entered(this: &Object, _: Sel, sender: id) -> BOOL {
         }
     }
 
-    trace!("Completed `draggingEntered:`");
+    //trace!("Completed `draggingEntered:`");
     YES
 }
 
 /// Invoked when the image is released
 extern "C" fn prepare_for_drag_operation(_: &Object, _: Sel, _: id) -> BOOL {
-    trace!("Triggered `prepareForDragOperation:`");
-    trace!("Completed `prepareForDragOperation:`");
+    //trace!("Triggered `prepareForDragOperation:`");
+    //trace!("Completed `prepareForDragOperation:`");
     YES
 }
 
 /// Invoked after the released image has been removed from the screen
 extern "C" fn perform_drag_operation(this: &Object, _: Sel, sender: id) -> BOOL {
-    trace!("Triggered `performDragOperation:`");
+    //trace!("Triggered `performDragOperation:`");
 
     use cocoa::{appkit::NSPasteboard, foundation::NSFastEnumeration};
     use std::path::PathBuf;
@@ -408,34 +408,34 @@ extern "C" fn perform_drag_operation(this: &Object, _: Sel, sender: id) -> BOOL 
         }
     }
 
-    trace!("Completed `performDragOperation:`");
+    //trace!("Completed `performDragOperation:`");
     YES
 }
 
 /// Invoked when the dragging operation is complete
 extern "C" fn conclude_drag_operation(_: &Object, _: Sel, _: id) {
-    trace!("Triggered `concludeDragOperation:`");
-    trace!("Completed `concludeDragOperation:`");
+    //trace!("Triggered `concludeDragOperation:`");
+    //trace!("Completed `concludeDragOperation:`");
 }
 
 /// Invoked when the dragging operation is cancelled
 extern "C" fn dragging_exited(this: &Object, _: Sel, _: id) {
-    trace!("Triggered `draggingExited:`");
+    //trace!("Triggered `draggingExited:`");
     with_state(this, |state| {
         state.emit_event(WindowEvent::HoveredFileCancelled)
     });
-    trace!("Completed `draggingExited:`");
+    //trace!("Completed `draggingExited:`");
 }
 
 /// Invoked when before enter fullscreen
 extern "C" fn window_will_enter_fullscreen(this: &Object, _: Sel, _: id) {
-    trace!("Triggered `windowWillEnterFullscreen:`");
+    //trace!("Triggered `windowWillEnterFullscreen:`");
 
     INTERRUPT_EVENT_LOOP_EXIT.store(true, Ordering::SeqCst);
 
     with_state(this, |state| {
         state.with_window(|window| {
-            trace!("Locked shared state in `window_will_enter_fullscreen`");
+            //trace!("Locked shared state in `window_will_enter_fullscreen`");
             let mut shared_state = window.shared_state.lock().unwrap();
             shared_state.maximized = window.is_zoomed();
             match shared_state.fullscreen {
@@ -454,27 +454,27 @@ extern "C" fn window_will_enter_fullscreen(this: &Object, _: Sel, _: id) {
                 }
             }
             shared_state.in_fullscreen_transition = true;
-            trace!("Unlocked shared state in `window_will_enter_fullscreen`");
+            //trace!("Unlocked shared state in `window_will_enter_fullscreen`");
         })
     });
-    trace!("Completed `windowWillEnterFullscreen:`");
+    //trace!("Completed `windowWillEnterFullscreen:`");
 }
 
 /// Invoked when before exit fullscreen
 extern "C" fn window_will_exit_fullscreen(this: &Object, _: Sel, _: id) {
-    trace!("Triggered `windowWillExitFullScreen:`");
+    //trace!("Triggered `windowWillExitFullScreen:`");
 
     INTERRUPT_EVENT_LOOP_EXIT.store(true, Ordering::SeqCst);
 
     with_state(this, |state| {
         state.with_window(|window| {
-            trace!("Locked shared state in `window_will_exit_fullscreen`");
+            //trace!("Locked shared state in `window_will_exit_fullscreen`");
             let mut shared_state = window.shared_state.lock().unwrap();
             shared_state.in_fullscreen_transition = true;
-            trace!("Unlocked shared state in `window_will_exit_fullscreen`");
+            //trace!("Unlocked shared state in `window_will_exit_fullscreen`");
         });
     });
-    trace!("Completed `windowWillExitFullScreen:`");
+    //trace!("Completed `windowWillExitFullScreen:`");
 }
 
 extern "C" fn window_will_use_fullscreen_presentation_options(
@@ -501,44 +501,44 @@ extern "C" fn window_will_use_fullscreen_presentation_options(
 extern "C" fn window_did_enter_fullscreen(this: &Object, _: Sel, _: id) {
     INTERRUPT_EVENT_LOOP_EXIT.store(false, Ordering::SeqCst);
 
-    trace!("Triggered `windowDidEnterFullscreen:`");
+    //trace!("Triggered `windowDidEnterFullscreen:`");
     with_state(this, |state| {
         state.initial_fullscreen = false;
         state.with_window(|window| {
-            trace!("Locked shared state in `window_did_enter_fullscreen`");
+            //trace!("Locked shared state in `window_did_enter_fullscreen`");
             let mut shared_state = window.shared_state.lock().unwrap();
             shared_state.in_fullscreen_transition = false;
             let target_fullscreen = shared_state.target_fullscreen.take();
-            trace!("Unlocked shared state in `window_did_enter_fullscreen`");
+            //trace!("Unlocked shared state in `window_did_enter_fullscreen`");
             drop(shared_state);
             if let Some(target_fullscreen) = target_fullscreen {
                 window.set_fullscreen(target_fullscreen);
             }
         });
     });
-    trace!("Completed `windowDidEnterFullscreen:`");
+    //trace!("Completed `windowDidEnterFullscreen:`");
 }
 
 /// Invoked when exited fullscreen
 extern "C" fn window_did_exit_fullscreen(this: &Object, _: Sel, _: id) {
     INTERRUPT_EVENT_LOOP_EXIT.store(false, Ordering::SeqCst);
 
-    trace!("Triggered `windowDidExitFullscreen:`");
+    //trace!("Triggered `windowDidExitFullscreen:`");
     with_state(this, |state| {
         state.with_window(|window| {
             window.restore_state_from_fullscreen();
-            trace!("Locked shared state in `window_did_exit_fullscreen`");
+            //trace!("Locked shared state in `window_did_exit_fullscreen`");
             let mut shared_state = window.shared_state.lock().unwrap();
             shared_state.in_fullscreen_transition = false;
             let target_fullscreen = shared_state.target_fullscreen.take();
-            trace!("Unlocked shared state in `window_did_exit_fullscreen`");
+            //trace!("Unlocked shared state in `window_did_exit_fullscreen`");
             drop(shared_state);
             if let Some(target_fullscreen) = target_fullscreen {
                 window.set_fullscreen(target_fullscreen);
             }
         })
     });
-    trace!("Completed `windowDidExitFullscreen:`");
+    //trace!("Completed `windowDidExitFullscreen:`");
 }
 
 /// Invoked when fail to enter fullscreen
@@ -558,14 +558,14 @@ extern "C" fn window_did_exit_fullscreen(this: &Object, _: Sel, _: id) {
 /// This method indicates that there was an error, and you should clean up any
 /// work you may have done to prepare to enter full-screen mode.
 extern "C" fn window_did_fail_to_enter_fullscreen(this: &Object, _: Sel, _: id) {
-    trace!("Triggered `windowDidFailToEnterFullscreen:`");
+    //trace!("Triggered `windowDidFailToEnterFullscreen:`");
     with_state(this, |state| {
         state.with_window(|window| {
-            trace!("Locked shared state in `window_did_fail_to_enter_fullscreen`");
+            //trace!("Locked shared state in `window_did_fail_to_enter_fullscreen`");
             let mut shared_state = window.shared_state.lock().unwrap();
             shared_state.in_fullscreen_transition = false;
             shared_state.target_fullscreen = None;
-            trace!("Unlocked shared state in `window_did_fail_to_enter_fullscreen`");
+            //trace!("Unlocked shared state in `window_did_fail_to_enter_fullscreen`");
         });
         if state.initial_fullscreen {
             let _: () = unsafe {
@@ -579,5 +579,5 @@ extern "C" fn window_did_fail_to_enter_fullscreen(this: &Object, _: Sel, _: id) 
             state.with_window(|window| window.restore_state_from_fullscreen());
         }
     });
-    trace!("Completed `windowDidFailToEnterFullscreen:`");
+    //trace!("Completed `windowDidFailToEnterFullscreen:`");
 }
