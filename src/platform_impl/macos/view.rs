@@ -240,6 +240,18 @@ lazy_static! {
             scroll_wheel as extern "C" fn(&Object, Sel, id),
         );
         decl.add_method(
+            sel!(magnifyWithEvent:),
+            magnify as extern "C" fn(&Object, Sel, id),
+        );
+        decl.add_method(
+            sel!(rotateWithEvent:),
+            rotate as extern "C" fn(&Object, Sel, id),
+        );
+        decl.add_method(
+            sel!(swipeWithEvent:),
+            swipe as extern "C" fn(&Object, Sel, id),
+        );
+        decl.add_method(
             sel!(pressureChangeWithEvent:),
             pressure_change_with_event as extern "C" fn(&Object, Sel, id),
         );
@@ -991,6 +1003,80 @@ extern "C" fn mouse_exited(this: &Object, _sel: Sel, _event: id) {
         AppState::queue_event(EventWrapper::StaticEvent(window_event));
     }
     trace!("Completed `mouseExited`");
+}
+
+
+extern "C" fn magnify(this: &Object, _sel: Sel, event: id) {
+    trace!("Triggered `magnify`");
+
+    mouse_motion(this, event);
+
+    unsafe {
+        let magnification = event.magnification();
+        trace!("----magnify: {}", magnification);
+    //     let state_ptr: *mut c_void = *this.get_ivar("winitState");
+    //     let state = &mut *(state_ptr as *mut ViewState);
+
+    //     let delta = {
+    //         let (x, y) = (event.scrollingDeltaX(), event.scrollingDeltaY());
+    //         if event.hasPreciseScrollingDeltas() == YES {
+    //             let delta = LogicalPosition::new(x, y).to_physical(state.get_scale_factor());
+    //             MouseScrollDelta::PixelDelta(delta)
+    //         } else {
+    //             MouseScrollDelta::LineDelta(x as f32, y as f32)
+    //         }
+    //     };
+    //     let phase = match event.phase() {
+    //         NSEventPhase::NSEventPhaseMayBegin | NSEventPhase::NSEventPhaseBegan => {
+    //             TouchPhase::Started
+    //         }
+    //         NSEventPhase::NSEventPhaseEnded => TouchPhase::Ended,
+    //         _ => TouchPhase::Moved,
+    //     };
+
+    //     let device_event = Event::DeviceEvent {
+    //         device_id: DEVICE_ID,
+    //         event: DeviceEvent::MouseWheel { delta },
+    //     };
+
+    //     let state_ptr: *mut c_void = *this.get_ivar("winitState");
+    //     let state = &mut *(state_ptr as *mut ViewState);
+
+    //     update_potentially_stale_modifiers(state, event);
+
+    //     let window_event = Event::WindowEvent {
+    //         window_id: WindowId(get_window_id(state.ns_window)),
+    //         event: WindowEvent::MouseWheel {
+    //             device_id: DEVICE_ID,
+    //             delta,
+    //             phase,
+    //             modifiers: event_mods(event),
+    //         },
+    //     };
+
+    //     AppState::queue_event(EventWrapper::StaticEvent(device_event));
+    //     AppState::queue_event(EventWrapper::StaticEvent(window_event));
+    }
+    trace!("Completed `magnify`");
+}
+
+extern "C" fn rotate(this: &Object, _sel: Sel, event: id) {
+    trace!("Triggered `rotate`");
+    unsafe {
+        let rotation = event.rotation();
+        // trace!("----rotation: {}", rotation);
+    }
+    trace!("Completed `rotate`");
+}
+
+extern "C" fn swipe(this: &Object, _sel: Sel, event: id) {
+    trace!("Triggered `swipe`");
+    unsafe {
+        let delta_x = event.deltaX();
+        let delta_y = event.deltaY();
+        // trace!("----swipe: {}, {}", delta_x, delta_y);
+    }
+    trace!("Completed `swipe`");
 }
 
 extern "C" fn scroll_wheel(this: &Object, _sel: Sel, event: id) {

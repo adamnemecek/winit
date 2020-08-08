@@ -306,6 +306,12 @@ pub enum WindowEvent<'a> {
         modifiers: ModifiersState,
     },
 
+    /// macOS TrackpadGesture
+    TrackpadGesture {
+        device_id: DeviceId,
+        gesture: Gesture
+    },
+
     /// Touchpad pressure event.
     ///
     /// At the moment, only supported on Apple forcetouch-capable macbooks.
@@ -436,6 +442,13 @@ impl Clone for WindowEvent<'static> {
                 axis: *axis,
                 value: *value,
             },
+            TrackpadGesture {
+                device_id,
+                gesture
+            } => TrackpadGesture {
+                device_id: *device_id,
+                gesture: *gesture,
+            },
             Touch(touch) => Touch(*touch),
             ThemeChanged(theme) => ThemeChanged(theme.clone()),
             ScaleFactorChanged { .. } => {
@@ -512,6 +525,13 @@ impl<'a> WindowEvent<'a> {
                 device_id,
                 pressure,
                 stage,
+            }),
+            TrackpadGesture {
+                device_id,
+                gesture
+            } => Some(TrackpadGesture {
+                device_id,
+                gesture
             }),
             AxisMotion {
                 device_id,
@@ -765,6 +785,18 @@ pub enum MouseScrollDelta {
     /// supported by the device (eg. a touchpad) and
     /// platform.
     PixelDelta(PhysicalPosition<f64>),
+}
+
+/// macOS trackpad gesture
+#[derive(Debug, Clone, Copy, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub enum Gesture {
+    /// Factor of magnification
+    Magnify(f32),
+    /// Represents degress of rotation, counterclockwise
+    Rotate(f32),
+    /// Direction of swipe
+    Swipe(f32, f32)
 }
 
 /// Symbolic name for a keyboard key.
