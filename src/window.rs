@@ -628,6 +628,7 @@ impl Window {
     ///
     /// - **iOS:** Can only be called on the main thread.
     /// - **Android:** Will always return `None`.
+    /// - **Wayland:** Can return `Borderless(None)` when there are no monitors.
     #[inline]
     pub fn fullscreen(&self) -> Option<Fullscreen> {
         self.window.fullscreen()
@@ -736,13 +737,15 @@ impl Window {
 
 /// Monitor info functions.
 impl Window {
-    /// Returns the monitor on which the window currently resides
+    /// Returns the monitor on which the window currently resides.
+    ///
+    /// Returns `None` if current monitor can't be detected.
     ///
     /// ## Platform-specific
     ///
     /// **iOS:** Can only be called on the main thread.
     #[inline]
-    pub fn current_monitor(&self) -> MonitorHandle {
+    pub fn current_monitor(&self) -> Option<MonitorHandle> {
         self.window.current_monitor()
     }
 
@@ -763,16 +766,17 @@ impl Window {
 
     /// Returns the primary monitor of the system.
     ///
+    /// Returns `None` if it can't identify any monitor as a primary one.
+    ///
     /// This is the same as `EventLoopWindowTarget::primary_monitor`, and is provided for convenience.
     ///
     /// ## Platform-specific
     ///
     /// **iOS:** Can only be called on the main thread.
+    /// **Wayland:** Always returns `None`.
     #[inline]
-    pub fn primary_monitor(&self) -> MonitorHandle {
-        MonitorHandle {
-            inner: self.window.primary_monitor(),
-        }
+    pub fn primary_monitor(&self) -> Option<MonitorHandle> {
+        self.window.primary_monitor()
     }
 }
 
@@ -847,10 +851,13 @@ impl Default for CursorIcon {
     }
 }
 
+/// Fullscreen modes.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Fullscreen {
     Exclusive(VideoMode),
-    Borderless(MonitorHandle),
+
+    /// Providing `None` to `Borderless` will fullscreen on the current monitor.
+    Borderless(Option<MonitorHandle>),
 }
 
 #[derive(Clone, Debug, PartialEq)]

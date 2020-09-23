@@ -425,9 +425,22 @@ impl Window {
     }
 
     #[inline]
-    pub fn current_monitor(&self) -> RootMonitorHandle {
-        RootMonitorHandle {
-            inner: x11_or_wayland!(match self; Window(window) => window.current_monitor(); as MonitorHandle),
+    pub fn current_monitor(&self) -> Option<RootMonitorHandle> {
+        match self {
+            #[cfg(feature = "x11")]
+            &Window::X(ref window) => {
+                let current_monitor = MonitorHandle::X(window.current_monitor());
+                Some(RootMonitorHandle {
+                    inner: current_monitor,
+                })
+            }
+            #[cfg(feature = "wayland")]
+            &Window::Wayland(ref window) => {
+                let current_monitor = MonitorHandle::Wayland(window.current_monitor()?);
+                Some(RootMonitorHandle {
+                    inner: current_monitor,
+                })
+            }
         }
     }
 
@@ -450,8 +463,18 @@ impl Window {
     }
 
     #[inline]
-    pub fn primary_monitor(&self) -> MonitorHandle {
-        x11_or_wayland!(match self; Window(window) => window.primary_monitor(); as MonitorHandle)
+    pub fn primary_monitor(&self) -> Option<RootMonitorHandle> {
+        match self {
+            #[cfg(feature = "x11")]
+            &Window::X(ref window) => {
+                let primary_monitor = MonitorHandle::X(window.primary_monitor());
+                Some(RootMonitorHandle {
+                    inner: primary_monitor,
+                })
+            }
+            #[cfg(feature = "wayland")]
+            &Window::Wayland(ref window) => window.primary_monitor(),
+        }
     }
 
     pub fn raw_window_handle(&self) -> RawWindowHandle {
@@ -669,15 +692,16 @@ impl<T> EventLoopWindowTarget<T> {
     }
 
     #[inline]
-    pub fn primary_monitor(&self) -> MonitorHandle {
+    pub fn primary_monitor(&self) -> Option<RootMonitorHandle> {
         match *self {
             #[cfg(feature = "wayland")]
-            EventLoopWindowTarget::Wayland(ref evlp) => {
-                MonitorHandle::Wayland(evlp.primary_monitor())
-            }
+            EventLoopWindowTarget::Wayland(ref evlp) => evlp.primary_monitor(),
             #[cfg(feature = "x11")]
             EventLoopWindowTarget::X(ref evlp) => {
-                MonitorHandle::X(evlp.x_connection().primary_monitor())
+                let primary_monitor = MonitorHandle::X(evlp.x_connection().primary_monitor());
+                Some(RootMonitorHandle {
+                    inner: primary_monitor,
+                })
             }
         }
     }

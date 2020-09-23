@@ -10,8 +10,7 @@ use crate::{
     error::{ExternalError, NotSupportedError, OsError as RootOsError},
     monitor::MonitorHandle as RootMonitorHandle,
     platform_impl::{
-        platform::wayland::event_loop::{available_monitors, primary_monitor},
-        MonitorHandle as PlatformMonitorHandle,
+        platform::wayland::event_loop::available_monitors, MonitorHandle as PlatformMonitorHandle,
         PlatformSpecificWindowBuilderAttributes as PlAttributes,
     },
     window::{CursorIcon, Fullscreen, WindowAttributes},
@@ -155,11 +154,16 @@ impl Window {
             Some(Fullscreen::Exclusive(_)) => {
                 panic!("Wayland doesn't support exclusive fullscreen")
             }
-            Some(Fullscreen::Borderless(RootMonitorHandle {
-                inner: PlatformMonitorHandle::Wayland(ref monitor_id),
-            })) => frame.set_fullscreen(Some(&monitor_id.proxy)),
-            #[cfg(feature = "x11")]
-            Some(Fullscreen::Borderless(_)) => unreachable!(),
+            Some(Fullscreen::Borderless(monitor)) => {
+                let monitor =
+                    monitor.and_then(|RootMonitorHandle { inner: monitor }| match monitor {
+                        PlatformMonitorHandle::Wayland(monitor) => Some(monitor.proxy),
+                        #[cfg(feature = "x11")]
+                        PlatformMonitorHandle::X(_) => None,
+                    });
+
+                frame.set_fullscreen(monitor.as_ref())
+            }
             None => {
                 if attributes.maximized {
                     frame.set_maximized();
@@ -334,9 +338,13 @@ impl Window {
 
     pub fn fullscreen(&self) -> Option<Fullscreen> {
         if *(self.fullscreen.lock().unwrap()) {
-            Some(Fullscreen::Borderless(RootMonitorHandle {
-                inner: PlatformMonitorHandle::Wayland(self.current_monitor()),
-            }))
+            let current_monitor = self
+                .current_monitor()
+                .map(|current_monitor| RootMonitorHandle {
+                    inner: PlatformMonitorHandle::Wayland(current_monitor),
+                });
+
+            Some(Fullscreen::Borderless(current_monitor))
         } else {
             None
         }
@@ -347,16 +355,16 @@ impl Window {
             Some(Fullscreen::Exclusive(_)) => {
                 panic!("Wayland doesn't support exclusive fullscreen")
             }
-            Some(Fullscreen::Borderless(RootMonitorHandle {
-                inner: PlatformMonitorHandle::Wayland(ref monitor_id),
-            })) => {
-                self.frame
-                    .lock()
-                    .unwrap()
-                    .set_fullscreen(Some(&monitor_id.proxy));
+            Some(Fullscreen::Borderless(monitor)) => {
+                let monitor =
+                    monitor.and_then(|RootMonitorHandle { inner: monitor }| match monitor {
+                        PlatformMonitorHandle::Wayland(monitor) => Some(monitor.proxy),
+                        #[cfg(feature = "x11")]
+                        PlatformMonitorHandle::X(_) => None,
+                    });
+
+                self.frame.lock().unwrap().set_fullscreen(monitor.as_ref());
             }
-            #[cfg(feature = "x11")]
-            Some(Fullscreen::Borderless(_)) => unreachable!(),
             None => self.frame.lock().unwrap().unset_fullscreen(),
         }
     }
@@ -396,20 +404,21 @@ impl Window {
         &self.surface
     }
 
-    pub fn current_monitor(&self) -> MonitorHandle {
-        let output = get_outputs(&self.surface).last().unwrap().clone();
-        MonitorHandle {
+    pub fn current_monitor(&self) -> Option<MonitorHandle> {
+        let output = get_outputs(&self.surface).last()?.clone();
+        Some(MonitorHandle {
             proxy: output,
             mgr: self.outputs.clone(),
-        }
+        })
     }
 
     pub fn available_monitors(&self) -> VecDeque<MonitorHandle> {
         available_monitors(&self.outputs)
     }
 
-    pub fn primary_monitor(&self) -> MonitorHandle {
-        primary_monitor(&self.outputs)
+    pub fn primary_monitor(&self) -> Option<RootMonitorHandle> {
+        // Wayland doesn't have a notion of primary monitor.
+        None
     }
 
     pub fn raw_window_handle(&self) -> WaylandHandle {

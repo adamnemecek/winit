@@ -37,12 +37,6 @@ pub struct Canvas {
     wants_fullscreen: Rc<RefCell<bool>>,
 }
 
-impl Drop for Canvas {
-    fn drop(&mut self) {
-        self.raw.remove();
-    }
-}
-
 impl Canvas {
     pub fn create(attr: PlatformSpecificWindowBuilderAttributes) -> Result<Self, RootOE> {
         let canvas = match attr.canvas {
@@ -202,6 +196,7 @@ impl Canvas {
     where
         F: 'static + FnMut(i32, PhysicalPosition<f64>, MouseButton, ModifiersState),
     {
+        let canvas = self.raw.clone();
         self.on_mouse_press = Some(self.add_user_event(move |event: PointerDownEvent| {
             handler(
                 event.pointer_id(),
@@ -209,6 +204,9 @@ impl Canvas {
                 event::mouse_button(&event),
                 event::mouse_modifiers(&event),
             );
+            canvas
+                .set_pointer_capture(event.pointer_id())
+                .expect("Failed to set pointer capture");
         }));
     }
 
@@ -301,5 +299,9 @@ impl Canvas {
 
     pub fn is_fullscreen(&self) -> bool {
         super::is_fullscreen(&self.raw)
+    }
+
+    pub fn remove_listeners(&mut self) {
+        // TODO: Stub, unimplemented (see web_sys for reference).
     }
 }
