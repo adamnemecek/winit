@@ -302,6 +302,7 @@ pub enum WindowEvent<'a> {
         device_id: DeviceId,
         state: ElementState,
         button: MouseButton,
+        click_count: Option<i64>,
         #[deprecated = "Deprecated in favor of WindowEvent::ModifiersChanged"]
         modifiers: ModifiersState,
     },
@@ -309,7 +310,7 @@ pub enum WindowEvent<'a> {
     /// macOS TrackpadGesture
     TrackpadGesture {
         device_id: DeviceId,
-        gesture: Gesture
+        gesture: Gesture,
     },
 
     /// Touchpad pressure event.
@@ -418,11 +419,13 @@ impl Clone for WindowEvent<'static> {
                 state,
                 button,
                 modifiers,
+                click_count,
             } => MouseInput {
                 device_id: *device_id,
                 state: *state,
                 button: *button,
                 modifiers: *modifiers,
+                click_count: *click_count,
             },
             TouchpadPressure {
                 device_id,
@@ -442,10 +445,7 @@ impl Clone for WindowEvent<'static> {
                 axis: *axis,
                 value: *value,
             },
-            TrackpadGesture {
-                device_id,
-                gesture
-            } => TrackpadGesture {
+            TrackpadGesture { device_id, gesture } => TrackpadGesture {
                 device_id: *device_id,
                 gesture: *gesture,
             },
@@ -511,11 +511,13 @@ impl<'a> WindowEvent<'a> {
                 state,
                 button,
                 modifiers,
+                click_count,
             } => Some(MouseInput {
                 device_id,
                 state,
                 button,
                 modifiers,
+                click_count,
             }),
             TouchpadPressure {
                 device_id,
@@ -526,13 +528,7 @@ impl<'a> WindowEvent<'a> {
                 pressure,
                 stage,
             }),
-            TrackpadGesture {
-                device_id,
-                gesture
-            } => Some(TrackpadGesture {
-                device_id,
-                gesture
-            }),
+            TrackpadGesture { device_id, gesture } => Some(TrackpadGesture { device_id, gesture }),
             AxisMotion {
                 device_id,
                 axis,
@@ -796,7 +792,7 @@ pub enum Gesture {
     /// Represents degress of rotation, counterclockwise
     Rotate(f32),
     /// Direction of swipe
-    Swipe(f64, f64)
+    Swipe(f64, f64),
 }
 
 /// Symbolic name for a keyboard key.

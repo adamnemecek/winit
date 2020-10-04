@@ -252,6 +252,10 @@ lazy_static! {
             swipe as extern "C" fn(&Object, Sel, id),
         );
         decl.add_method(
+            sel!(clickCount),
+            click_count as extern "C" fn(&Object, Sel) -> NSInteger,
+        );
+        decl.add_method(
             sel!(pressureChangeWithEvent:),
             pressure_change_with_event as extern "C" fn(&Object, Sel, id),
         );
@@ -872,6 +876,7 @@ fn mouse_click(this: &Object, event: id, button: MouseButton, button_state: Elem
                 device_id: DEVICE_ID,
                 state: button_state,
                 button,
+                click_count: Some(event.clickCount()),
                 modifiers: event_mods(event),
             },
         };
@@ -1005,7 +1010,6 @@ extern "C" fn mouse_exited(this: &Object, _sel: Sel, _event: id) {
     //trace!("Completed `mouseExited`");
 }
 
-
 extern "C" fn magnify(this: &Object, _sel: Sel, event: id) {
     //trace!("Triggered `magnify`");
 
@@ -1045,7 +1049,7 @@ extern "C" fn magnify(this: &Object, _sel: Sel, event: id) {
             },
         };
 
-    //     AppState::queue_event(EventWrapper::StaticEvent(device_event));
+        //     AppState::queue_event(EventWrapper::StaticEvent(device_event));
         AppState::queue_event(EventWrapper::StaticEvent(window_event));
     }
     //trace!("Completed `magnify`");
@@ -1071,7 +1075,7 @@ extern "C" fn rotate(this: &Object, _sel: Sel, event: id) {
             },
         };
 
-    //     AppState::queue_event(EventWrapper::StaticEvent(device_event));
+        //     AppState::queue_event(EventWrapper::StaticEvent(device_event));
         AppState::queue_event(EventWrapper::StaticEvent(window_event));
         // //trace!("----rotation: {}", rotation);
     }
@@ -1100,7 +1104,7 @@ extern "C" fn swipe(this: &Object, _sel: Sel, event: id) {
             },
         };
 
-    //     AppState::queue_event(EventWrapper::StaticEvent(device_event));
+        //     AppState::queue_event(EventWrapper::StaticEvent(device_event));
         AppState::queue_event(EventWrapper::StaticEvent(window_event));
     }
     //trace!("Completed `swipe`");
@@ -1157,6 +1161,13 @@ extern "C" fn scroll_wheel(this: &Object, _sel: Sel, event: id) {
         AppState::queue_event(EventWrapper::StaticEvent(window_event));
     }
     //trace!("Completed `scrollWheel`");
+}
+
+extern "C" fn click_count(this: &Object, _sel: Sel) -> NSInteger {
+    unsafe {
+        let click_count: NSInteger = msg_send![this, clickCount];
+        click_count
+    }
 }
 
 extern "C" fn pressure_change_with_event(this: &Object, _sel: Sel, event: id) {
