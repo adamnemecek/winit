@@ -302,7 +302,7 @@ pub enum WindowEvent<'a> {
         device_id: DeviceId,
         state: ElementState,
         button: MouseButton,
-        click_count: Option<i64>,
+        click_count: i64,
         #[deprecated = "Deprecated in favor of WindowEvent::ModifiersChanged"]
         modifiers: ModifiersState,
     },

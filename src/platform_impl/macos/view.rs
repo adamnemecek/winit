@@ -876,7 +876,7 @@ fn mouse_click(this: &Object, event: id, button: MouseButton, button_state: Elem
                 device_id: DEVICE_ID,
                 state: button_state,
                 button,
-                click_count: Some(event.clickCount()),
+                click_count: event.clickCount(),
                 modifiers: event_mods(event),
             },
         };
