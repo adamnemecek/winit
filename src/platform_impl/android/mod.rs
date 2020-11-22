@@ -148,12 +148,33 @@ impl<T: 'static> EventLoop<T> {
                             );
                         }
                     }
+                    Event::WindowHasFocus => {
+                        call_event_handler!(
+                            event_handler,
+                            self.window_target(),
+                            control_flow,
+                            event::Event::WindowEvent {
+                                window_id: window::WindowId(WindowId),
+                                event: event::WindowEvent::Focused(true),
+                            }
+                        );
+                    }
+                    Event::WindowLostFocus => {
+                        call_event_handler!(
+                            event_handler,
+                            self.window_target(),
+                            control_flow,
+                            event::Event::WindowEvent {
+                                window_id: window::WindowId(WindowId),
+                                event: event::WindowEvent::Focused(false),
+                            }
+                        );
+                    }
                     _ => {}
                 },
                 Some(EventSource::InputQueue) => {
                     if let Some(input_queue) = ndk_glue::input_queue().as_ref() {
                         while let Some(event) = input_queue.get_event() {
-                            println!("event {:?}", event);
                             if let Some(event) = input_queue.pre_dispatch(event) {
                                 let window_id = window::WindowId(WindowId);
                                 let device_id = event::DeviceId(DeviceId);
@@ -483,7 +504,7 @@ impl Window {
         let a_native_window = if let Some(native_window) = ndk_glue::native_window().as_ref() {
             unsafe { native_window.ptr().as_mut() as *mut _ as *mut _ }
         } else {
-            panic!("native window null");
+            panic!("Cannot get the native window, it's null and will always be null before Event::Resumed and after Event::Suspended. Make sure you only call this function between those events.");
         };
         let mut handle = raw_window_handle::android::AndroidHandle::empty();
         handle.a_native_window = a_native_window;

@@ -403,8 +403,8 @@ extern "C" fn has_marked_text(this: &Object, _sel: Sel) -> BOOL {
     unsafe {
         //trace!("Triggered `hasMarkedText`");
         let marked_text: id = *this.get_ivar("markedText");
-        //trace!("Completed `hasMarkedText`");
-        (marked_text.length() > 0) as i8
+        trace!("Completed `hasMarkedText`");
+        (marked_text.length() > 0) as BOOL
     }
 }
 
