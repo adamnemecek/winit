@@ -4,6 +4,7 @@ mod runner;
 
 use parking_lot::Mutex;
 use std::{
+    cell::Cell,
     collections::VecDeque,
     marker::PhantomData,
     mem, panic, ptr,
@@ -19,7 +20,7 @@ use winapi::shared::basetsd::{DWORD_PTR, UINT_PTR};
 
 use winapi::{
     shared::{
-        minwindef::{BOOL, DWORD, HIWORD, INT, LOWORD, LPARAM, LRESULT, UINT, WPARAM},
+        minwindef::{BOOL, DWORD, HIWORD, INT, LOWORD, LPARAM, LRESULT, UINT, WORD, WPARAM},
         windef::{HWND, POINT, RECT},
         windowsx, winerror,
     },
@@ -86,6 +87,8 @@ pub(crate) struct SubclassInput<T: 'static> {
     pub window_state: Arc<Mutex<WindowState>>,
     pub event_loop_runner: EventLoopRunnerShared<T>,
     pub file_drop_handler: Option<FileDropHandler>,
+    pub subclass_removed: Cell<bool>,
+    pub recurse_depth: Cell<u32>,
 }
 
 impl<T> SubclassInput<T> {
@@ -616,6 +619,17 @@ fn subclass_event_target_window<T>(
     }
 }
 
+fn remove_event_target_window_subclass<T: 'static>(window: HWND) {
+    let removal_result = unsafe {
+        commctrl::RemoveWindowSubclass(
+            window,
+            Some(thread_event_target_callback::<T>),
+            THREAD_EVENT_TARGET_SUBCLASS_ID,
+        )
+    };
+    assert_eq!(removal_result, 1);
+}
+
 /// Capture mouse input, allowing `window` to receive mouse events when the cursor is outside of
 /// the window.
 unsafe fn capture_mouse(window: HWND, window_state: &mut WindowState) {
@@ -648,6 +662,17 @@ pub(crate) fn subclass_window<T>(window: HWND, subclass_input: SubclassInput<T>)
         )
     };
     assert_eq!(subclass_result, 1);
+}
+
+fn remove_window_subclass<T: 'static>(window: HWND) {
+    let removal_result = unsafe {
+        commctrl::RemoveWindowSubclass(
+            window,
+            Some(public_window_callback::<T>),
+            WINDOW_SUBCLASS_ID,
+        )
+    };
+    assert_eq!(removal_result, 1);
 }
 
 fn normalize_pointer_pressure(pressure: u32) -> Option<Force> {
@@ -752,11 +777,41 @@ unsafe extern "system" fn public_window_callback<T: 'static>(
     msg: UINT,
     wparam: WPARAM,
     lparam: LPARAM,
-    _: UINT_PTR,
+    uidsubclass: UINT_PTR,
     subclass_input_ptr: DWORD_PTR,
 ) -> LRESULT {
-    let subclass_input = &*(subclass_input_ptr as *const SubclassInput<T>);
+    let subclass_input_ptr = subclass_input_ptr as *mut SubclassInput<T>;
+    let (result, subclass_removed, recurse_depth) = {
+        let subclass_input = &*subclass_input_ptr;
+        subclass_input
+            .recurse_depth
+            .set(subclass_input.recurse_depth.get() + 1);
 
+        let result =
+            public_window_callback_inner(window, msg, wparam, lparam, uidsubclass, subclass_input);
+
+        let subclass_removed = subclass_input.subclass_removed.get();
+        let recurse_depth = subclass_input.recurse_depth.get() - 1;
+        subclass_input.recurse_depth.set(recurse_depth);
+
+        (result, subclass_removed, recurse_depth)
+    };
+
+    if subclass_removed && recurse_depth == 0 {
+        Box::from_raw(subclass_input_ptr);
+    }
+
+    result
+}
+
+unsafe fn public_window_callback_inner<T: 'static>(
+    window: HWND,
+    msg: UINT,
+    wparam: WPARAM,
+    lparam: LPARAM,
+    _: UINT_PTR,
+    subclass_input: &SubclassInput<T>,
+) -> LRESULT {
     winuser::RedrawWindow(
         subclass_input.event_loop_runner.thread_msg_target(),
         ptr::null(),
@@ -816,8 +871,8 @@ unsafe extern "system" fn public_window_callback<T: 'static>(
         }
 
         winuser::WM_NCDESTROY => {
-            drop(subclass_input);
-            Box::from_raw(subclass_input_ptr as *mut SubclassInput<T>);
+            remove_window_subclass::<T>(window);
+            subclass_input.subclass_removed.set(true);
             0
         }
 
@@ -1339,8 +1394,13 @@ unsafe extern "system" fn public_window_callback<T: 'static>(
         }
 
         winuser::WM_CAPTURECHANGED => {
-            // window lost mouse capture
-            subclass_input.window_state.lock().mouse.capture_count = 0;
+            // lparam here is a handle to the window which is gaining mouse capture.
+            // If it is the same as our window, then we're essentially retaining the capture. This
+            // can happen if `SetCapture` is called on our window when it already has the mouse
+            // capture.
+            if lparam != window as isize {
+                subclass_input.window_state.lock().mouse.capture_count = 0;
+            }
             0
         }
 
@@ -1609,11 +1669,11 @@ unsafe extern "system" fn public_window_callback<T: 'static>(
         winuser::WM_SETCURSOR => {
             let set_cursor_to = {
                 let window_state = subclass_input.window_state.lock();
-                if window_state
-                    .mouse
-                    .cursor_flags()
-                    .contains(CursorFlags::IN_WINDOW)
-                {
+                // The return value for the preceding `WM_NCHITTEST` message is conveniently
+                // provided through the low-order word of lParam. We use that here since
+                // `WM_MOUSEMOVE` seems to come after `WM_SETCURSOR` for a given cursor movement.
+                let in_client_area = LOWORD(lparam as DWORD) == winuser::HTCLIENT as WORD;
+                if in_client_area {
                     Some(window_state.mouse.cursor)
                 } else {
                     None
@@ -1931,8 +1991,7 @@ unsafe extern "system" fn thread_event_target_callback<T: 'static>(
     _: UINT_PTR,
     subclass_input_ptr: DWORD_PTR,
 ) -> LRESULT {
-    let subclass_input = &mut *(subclass_input_ptr as *mut ThreadMsgTargetSubclassInput<T>);
-    let runner = subclass_input.event_loop_runner.clone();
+    let subclass_input = Box::from_raw(subclass_input_ptr as *mut ThreadMsgTargetSubclassInput<T>);
 
     if msg != winuser::WM_PAINT {
         winuser::RedrawWindow(
@@ -1943,13 +2002,15 @@ unsafe extern "system" fn thread_event_target_callback<T: 'static>(
         );
     }
 
+    let mut subclass_removed = false;
+
     // I decided to bind the closure to `callback` and pass it to catch_unwind rather than passing
     // the closure to catch_unwind directly so that the match body indendation wouldn't change and
     // the git blame and history would be preserved.
     let callback = || match msg {
         winuser::WM_NCDESTROY => {
-            Box::from_raw(subclass_input);
-            drop(subclass_input);
+            remove_event_target_window_subclass::<T>(window);
+            subclass_removed = true;
             0
         }
         // Because WM_PAINT comes after all other messages, we use it during modal loops to detect
@@ -2156,5 +2217,14 @@ unsafe extern "system" fn thread_event_target_callback<T: 'static>(
         _ => commctrl::DefSubclassProc(window, msg, wparam, lparam),
     };
 
-    runner.catch_unwind(callback).unwrap_or(-1)
+    let result = subclass_input
+        .event_loop_runner
+        .catch_unwind(callback)
+        .unwrap_or(-1);
+    if subclass_removed {
+        mem::drop(subclass_input);
+    } else {
+        Box::into_raw(subclass_input);
+    }
+    result
 }
