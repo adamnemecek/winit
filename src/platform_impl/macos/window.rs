@@ -636,6 +636,16 @@ impl UnownedWindow {
         Ok(())
     }
 
+    #[inline]
+    pub fn drag_window(&self) -> Result<(), ExternalError> {
+        unsafe {
+            let event: id = msg_send![NSApp(), currentEvent];
+            let _: () = msg_send![*self.ns_window, performWindowDragWithEvent: event];
+        }
+
+        Ok(())
+    }
+
     pub(crate) fn is_zoomed(&self) -> bool {
         // because `isZoomed` doesn't work if the window's borderless,
         // we make it resizable temporalily.
@@ -728,6 +738,11 @@ impl UnownedWindow {
     pub fn fullscreen(&self) -> Option<Fullscreen> {
         let shared_state_lock = self.shared_state.lock().unwrap();
         shared_state_lock.fullscreen.clone()
+    }
+
+    #[inline]
+    pub fn is_maximized(&self) -> bool {
+        self.is_zoomed()
     }
 
     #[inline]
@@ -1153,7 +1168,7 @@ impl Drop for UnownedWindow {
         //trace!("Dropping `UnownedWindow` ({:?})", self as *mut _);
         // Close the window if it has not yet been closed.
         if *self.ns_window != nil {
-            unsafe { util::close_async(*self.ns_window) };
+            unsafe { util::close_async(self.ns_window.clone()) };
         }
     }
 }

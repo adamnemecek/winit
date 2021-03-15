@@ -526,7 +526,7 @@ impl Window {
     ///
     /// ## Platform-specific
     ///
-    /// - **iOS / Andraid / Web:** Unsupported.
+    /// - **iOS / Android / Web:** Unsupported.
     #[inline]
     pub fn set_max_inner_size<S: Into<Size>>(&self, max_size: Option<S>) {
         self.window.set_max_inner_size(max_size.map(|s| s.into()))
@@ -595,6 +595,17 @@ impl Window {
     #[inline]
     pub fn set_maximized(&self, maximized: bool) {
         self.window.set_maximized(maximized)
+    }
+
+    /// Gets the window's current maximized state.
+    ///
+    /// ## Platform-specific
+    ///
+    /// - **Wayland / X11:** Not implemented.
+    /// - **iOS / Android / Web:** Unsupported.
+    #[inline]
+    pub fn is_maximized(&self) -> bool {
+        self.window.is_maximized()
     }
 
     /// Sets the window to fullscreen or back.
@@ -752,6 +763,22 @@ impl Window {
     #[inline]
     pub fn set_cursor_visible(&self, visible: bool) {
         self.window.set_cursor_visible(visible)
+    }
+
+    /// Moves the window with the left mouse button until the button is released.
+    ///
+    /// There's no guarantee that this will work unless the left mouse button was pressed
+    /// immediately before this function is called.
+    ///
+    /// ## Platform-specific
+    ///
+    /// - **X11:** Un-grabs the cursor.
+    /// - **Wayland:** Requires the cursor to be inside the window to be dragged.
+    /// - **macOS:** May prevent the button release event to be triggered.
+    /// - **iOS / Android / Web:** Always returns an [`ExternalError::NotSupported`].
+    #[inline]
+    pub fn drag_window(&self) -> Result<(), ExternalError> {
+        self.window.drag_window()
     }
 }
 
