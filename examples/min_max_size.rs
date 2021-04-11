@@ -62,10 +62,11 @@ fn main() {
                     AVAudioUnit::new_with_component_description_tx(desc, Default::default(), &tx);
             }
             Event::MainEventsCleared => {
+                use avfoundation::AVFoundationEvent;
                 if !loaded_vc {
                     for e in rx.try_recv() {
                         match e {
-                            avfoundation::AVFoundationEvent::AVAudioUnitHandler(unit) => match unit
+                            AVFoundationEvent::AVAudioUnitHandler(unit) => match unit
                             {
                                 Ok(unit) => {
                                     println!("loaded audiounit");
@@ -75,7 +76,7 @@ fn main() {
                                     todo!()
                                 }
                             },
-                            avfoundation::AVFoundationEvent::RequestViewController(vc) => {
+                            AVFoundationEvent::RequestViewController(vc) => {
                                 println!("loaded vc");
                                 loaded_vc = true;
                                 let vc = vc.unwrap();
