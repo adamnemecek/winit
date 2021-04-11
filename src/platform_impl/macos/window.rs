@@ -353,12 +353,15 @@ pub struct ChildWindow {
 
 impl UnownedWindow {
     pub fn window_with_content_view_controller(&self, vc: cocoa::base::id) -> ChildWindow {
+        println!("window with content");
         let window: id =
             unsafe { msg_send![class!(NSWindow), windowWithContentViewController: vc] };
 
+        println!("add child window");
         unsafe {
             let _: () = msg_send![*self.ns_window, addChildWindow: window ordered: 1];
         }
+        println!("done");
         ChildWindow { window }
     }
 

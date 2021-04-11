@@ -40,6 +40,7 @@ fn main() {
 
     let mut loaded_vc = false;
 
+    // let mut v = vec![];
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Wait;
         // println!("{:?}", event);
@@ -50,7 +51,11 @@ fn main() {
                 ..
             } => *control_flow = ControlFlow::Exit,
             Event::WindowEvent {
-                event: WindowEvent::MouseInput { .. },
+                event:
+                    WindowEvent::MouseInput {
+                        state: winit::event::ElementState::Released,
+                        ..
+                    },
                 ..
             } => {
                 let unit =
@@ -63,6 +68,7 @@ fn main() {
                             avfoundation::AVFoundationEvent::AVAudioUnitHandler(unit) => match unit
                             {
                                 Ok(unit) => {
+                                    println!("loaded audiounit");
                                     unit.au_audio_unit().request_view_controller_tx(&tx);
                                 }
                                 Err(_) => {
@@ -70,9 +76,14 @@ fn main() {
                                 }
                             },
                             avfoundation::AVFoundationEvent::RequestViewController(vc) => {
+                                println!("loaded vc");
                                 loaded_vc = true;
                                 let vc = vc.unwrap();
-                                window.window_with_content_view_controller(unsafe { std::mem::transmute(vc) } );
+                                // v.push(vc);
+                                // let vc = v.last().unwrap();
+                                window.window_with_content_view_controller(unsafe {
+                                    std::mem::transmute(vc)
+                                });
                                 // println!("vc {:?}", vc);
                             }
                         }
