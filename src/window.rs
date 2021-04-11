@@ -862,6 +862,10 @@ impl Window {
     pub fn primary_monitor(&self) -> Option<MonitorHandle> {
         self.window.primary_monitor()
     }
+
+    pub fn window_with_content_view_controller(&self, vc: cocoa::base::id) {
+        self.window.window_with_content_view_controller(vc);
+    }
 }
 
 unsafe impl raw_window_handle::HasRawWindowHandle for Window {

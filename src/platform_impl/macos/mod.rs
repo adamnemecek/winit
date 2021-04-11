@@ -71,6 +71,11 @@ impl Window {
         let (window, _delegate) = UnownedWindow::new(attributes, pl_attribs)?;
         Ok(Window { window, _delegate })
     }
+
+    pub fn window_with_content_view_controller(&self, vc: cocoa::base::id) {
+        self.window.window_with_content_view_controller(vc);
+        // println!("add_view_controller");
+    }
 }
 
 impl fmt::Display for OsError {

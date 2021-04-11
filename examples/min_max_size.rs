@@ -6,6 +6,8 @@ use winit::{
     window::WindowBuilder,
 };
 
+use avfoundation::prelude::*;
+
 fn main() {
     SimpleLogger::new().init().unwrap();
     let event_loop = EventLoop::new();
@@ -15,15 +17,68 @@ fn main() {
     window.set_min_inner_size(Some(LogicalSize::new(400.0, 200.0)));
     window.set_max_inner_size(Some(LogicalSize::new(800.0, 400.0)));
 
+    let manager = AVAudioUnitComponentManager::shared();
+    // let components = manager.components_passing_test(|unit| (true, ShouldStop::Continue));
+    let components = manager.components_passing_test(|unit| {
+        if unit.name().contains("DLS") {
+            (true, ShouldStop::Stop)
+        } else {
+            (false, ShouldStop::Continue)
+        }
+    });
+
+    let desc = components.first().unwrap().audio_component_description();
+
+    let engine = AVAudioEngine::new();
+
+    // println!("{:?}", components.first());
+
+    // let midi = AVAudioUnitMIDIInstrument::new_with_audio_component_description(desc);
+
+    // let (tx, rx) = std::sync::mpsc::channel();
+    let (tx, rx) = std::sync::mpsc::channel();
+
+    let mut loaded_vc = false;
+
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Wait;
-        println!("{:?}", event);
+        // println!("{:?}", event);
 
         match event {
             Event::WindowEvent {
                 event: WindowEvent::CloseRequested,
                 ..
             } => *control_flow = ControlFlow::Exit,
+            Event::WindowEvent {
+                event: WindowEvent::MouseInput { .. },
+                ..
+            } => {
+                let unit =
+                    AVAudioUnit::new_with_component_description_tx(desc, Default::default(), &tx);
+            }
+            Event::MainEventsCleared => {
+                if !loaded_vc {
+                    for e in rx.try_recv() {
+                        match e {
+                            avfoundation::AVFoundationEvent::AVAudioUnitHandler(unit) => match unit
+                            {
+                                Ok(unit) => {
+                                    unit.au_audio_unit().request_view_controller_tx(&tx);
+                                }
+                                Err(_) => {
+                                    todo!()
+                                }
+                            },
+                            avfoundation::AVFoundationEvent::RequestViewController(vc) => {
+                                loaded_vc = true;
+                                let vc = vc.unwrap();
+                                window.window_with_content_view_controller(unsafe { std::mem::transmute(vc) } );
+                                // println!("vc {:?}", vc);
+                            }
+                        }
+                    }
+                }
+            }
             _ => (),
         }
     });

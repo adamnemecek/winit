@@ -347,7 +347,21 @@ pub struct UnownedWindow {
 unsafe impl Send for UnownedWindow {}
 unsafe impl Sync for UnownedWindow {}
 
+pub struct ChildWindow {
+    window: id,
+}
+
 impl UnownedWindow {
+    pub fn window_with_content_view_controller(&self, vc: cocoa::base::id) -> ChildWindow {
+        let window: id =
+            unsafe { msg_send![class!(NSWindow), windowWithContentViewController: vc] };
+
+        unsafe {
+            let _: () = msg_send![*self.ns_window, addChildWindow: window ordered: 1];
+        }
+        ChildWindow { window }
+    }
+
     pub fn new(
         mut win_attribs: WindowAttributes,
         pl_attribs: PlatformSpecificWindowBuilderAttributes,

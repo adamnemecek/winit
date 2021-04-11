@@ -148,7 +148,7 @@ extern "C" fn control_flow_begin_handler(
     activity: CFRunLoopActivity,
     panic_info: *mut c_void,
 ) {
-// <<<<<<< HEAD
+    // <<<<<<< HEAD
     // #[allow(non_upper_case_globals)]
     // match activity {
     //     kCFRunLoopAfterWaiting => {
@@ -158,7 +158,7 @@ extern "C" fn control_flow_begin_handler(
     //     }
     //     kCFRunLoopEntry => unimplemented!(), // not expected to ever happen
     //     _ => unreachable!(),
-// =======
+    // =======
     unsafe {
         control_flow_handler(panic_info, |panic_info| {
             #[allow(non_upper_case_globals)]
@@ -172,7 +172,7 @@ extern "C" fn control_flow_begin_handler(
                 _ => unreachable!(),
             }
         });
-// >>>>>>> 86748fbc681ea070bc37e90a569c192555b402cd
+        // >>>>>>> 86748fbc681ea070bc37e90a569c192555b402cd
     }
 }
 
@@ -183,7 +183,7 @@ extern "C" fn control_flow_end_handler(
     activity: CFRunLoopActivity,
     panic_info: *mut c_void,
 ) {
-// <<<<<<< HEAD
+    // <<<<<<< HEAD
     // #[allow(non_upper_case_globals)]
     // match activity {
     //     kCFRunLoopBeforeWaiting => {
@@ -193,7 +193,7 @@ extern "C" fn control_flow_end_handler(
     //     }
     //     kCFRunLoopExit => (), //unimplemented!(), // not expected to ever happen
     //     _ => unreachable!(),
-// =======
+    // =======
     unsafe {
         control_flow_handler(panic_info, |panic_info| {
             #[allow(non_upper_case_globals)]
@@ -207,7 +207,7 @@ extern "C" fn control_flow_end_handler(
                 _ => unreachable!(),
             }
         });
-// >>>>>>> 86748fbc681ea070bc37e90a569c192555b402cd
+        // >>>>>>> 86748fbc681ea070bc37e90a569c192555b402cd
     }
 }
 
