@@ -14,13 +14,14 @@ fn main() {
 
     let window = WindowBuilder::new().build(&event_loop).unwrap();
 
+    
     window.set_min_inner_size(Some(LogicalSize::new(400.0, 200.0)));
     window.set_max_inner_size(Some(LogicalSize::new(800.0, 400.0)));
 
     let manager = AVAudioUnitComponentManager::shared();
     // let components = manager.components_passing_test(|unit| (true, ShouldStop::Continue));
     let components = manager.components_passing_test(|unit| {
-        if unit.name().contains("DLS") {
+        if unit.name().contains("Sylenth") {
             (true, ShouldStop::Stop)
         } else {
             (false, ShouldStop::Continue)
@@ -29,7 +30,8 @@ fn main() {
 
     let desc = components.first().unwrap().audio_component_description();
 
-    let engine = AVAudioEngine::new();
+    // let engine = AVAudioEngine::new();
+    // println!("start{:?}", engine.start());
 
     // println!("{:?}", components.first());
 
@@ -39,6 +41,17 @@ fn main() {
     let (tx, rx) = std::sync::mpsc::channel();
 
     let mut loaded_vc = false;
+
+    // let unit =
+    // AVAudioUnit::new_with_component_description_tx(desc, Default::default(), &tx);
+
+    let unit = AVAudioUnitMIDIInstrument::new_with_audio_component_description(desc);
+
+
+    unit.au_audio_unit().request_view_controller_fn(move |vc| {
+        // let z = tx.send(avfoundation::AVFoundationEvent::RequestViewController(vc));
+        println!("request view controller");
+    });
 
     // let mut v = vec![];
     event_loop.run(move |event, _, control_flow| {
@@ -58,24 +71,25 @@ fn main() {
                     },
                 ..
             } => {
-                let unit =
-                    AVAudioUnit::new_with_component_description_tx(desc, Default::default(), &tx);
             }
             Event::MainEventsCleared => {
                 use avfoundation::AVFoundationEvent;
-                if !loaded_vc {
+                // if !loaded_vc {
                     for e in rx.try_recv() {
                         match e {
-                            AVFoundationEvent::AVAudioUnitHandler(unit) => match unit
-                            {
-                                Ok(unit) => {
-                                    println!("loaded audiounit");
-                                    unit.au_audio_unit().request_view_controller_tx(&tx);
-                                }
-                                Err(_) => {
-                                    todo!()
-                                }
-                            },
+                            AVFoundationEvent::AVAudioUnitHandler(unit) => {
+                                // match unit
+                            // {
+                                todo!();
+                                // Ok(unit) => {
+                                //     println!("loaded audiounit");
+                                //     unit.au_audio_unit().request_view_controller_tx(&tx);
+                                // }
+                                // Err(e) => {
+                                //     panic!("error {:?}", e);
+                                // }
+                            // },
+                        }
                             AVFoundationEvent::RequestViewController(vc) => {
                                 println!("loaded vc");
                                 loaded_vc = true;
@@ -88,7 +102,7 @@ fn main() {
                                 // println!("vc {:?}", vc);
                             }
                         }
-                    }
+                    // }
                 }
             }
             _ => (),
