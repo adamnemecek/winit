@@ -14,7 +14,6 @@ fn main() {
 
     let window = WindowBuilder::new().build(&event_loop).unwrap();
 
-    
     window.set_min_inner_size(Some(LogicalSize::new(400.0, 200.0)));
     window.set_max_inner_size(Some(LogicalSize::new(800.0, 400.0)));
 
@@ -42,17 +41,16 @@ fn main() {
 
     let mut loaded_vc = false;
 
+    // let tx2 = tx.clone();
     // let unit =
-    // AVAudioUnit::new_with_component_description_tx(desc, Default::default(), &tx);
-    use avfoundation_sys::AUAudioUnitExt;
-    let unit = AVAudioUnitMIDIInstrument::new_with_audio_component_description(desc);
-    let tx1 = tx.clone();
-    unit.au_audio_unit().request_view_controller_async(move |controller| {
-        println!("callback");
-        tx1.send(1);
-        // let _ = tx1.send(controller.to_owned());
-    });
+    // AVAudioUnit::new_with_component_description_fn(desc, Default::default(),move |unit| {
 
+    // let _ = tx2.send(1);
+    // tx2.send();
+    // });
+    let unit = AVAudioUnit::new_with_component_description_tx(desc, Default::default(), &tx);
+    use avfoundation_sys::AUAudioUnitExt;
+    // let unit = AVAudioUnitMIDIInstrument::new_with_audio_component_description(desc);
 
     // unit.au_audio_unit().request_view_controller_async(move |vc| {
     //     // let z = tx.send(avfoundation::AVFoundationEvent::RequestViewController(vc));
@@ -76,42 +74,42 @@ fn main() {
                         ..
                     },
                 ..
-            } => {
-            }
+            } => {}
             Event::MainEventsCleared => {
                 use avfoundation::AVFoundationEvent;
-                for e in rx.try_recv() {
-                    println!("controller");
-                }
+                // for e in rx.try_recv() {
+                //     let tx1 = tx.clone();
+                //     unit.au_audio_unit().request_view_controller_async(move |controller| {
+                //         println!("vc loaded");
+                //         // tx1.send(10);
+                //         // let _ = tx1.send(controller.to_owned());
+                //     });
+                // }
                 // if !loaded_vc {
-                    // for e in rx.try_recv() {
-                    //     match e {
-                    //         AVFoundationEvent::AVAudioUnitHandler(unit) => {
-                    //             // match unit
-                    //         // {
-                    //             todo!();
-                    //             // Ok(unit) => {
-                    //             //     println!("loaded audiounit");
-                    //             //     unit.au_audio_unit().request_view_controller_tx(&tx);
-                    //             // }
-                    //             // Err(e) => {
-                    //             //     panic!("error {:?}", e);
-                    //             // }
-                    //         // },
-                    //     }
-                    //         AVFoundationEvent::RequestViewController(vc) => {
-                    //             println!("loaded vc");
-                    //             loaded_vc = true;
-                    //             let vc = vc.unwrap();
-                    //             // v.push(vc);
-                    //             // let vc = v.last().unwrap();
-                    //             window.window_with_content_view_controller(unsafe {
-                    //                 std::mem::transmute(vc)
-                    //             });
-                    //             // println!("vc {:?}", vc);
-                    //         }
-                    //     }
-                    // // }
+                for e in rx.try_recv() {
+                    match e {
+                        AVFoundationEvent::AVAudioUnitHandler(unit) => match unit {
+                            Ok(unit) => {
+                                println!("loaded audiounit");
+                                unit.au_audio_unit().request_view_controller_async_tx(&tx);
+                            }
+                            Err(e) => {
+                                panic!("error {:?}", e);
+                            }
+                        },
+                        AVFoundationEvent::RequestViewController(vc) => {
+                            println!("loaded vc");
+                            loaded_vc = true;
+                            let vc = vc.unwrap();
+                            // v.push(vc);
+                            // let vc = v.last().unwrap();
+                            window.window_with_content_view_controller(unsafe {
+                                std::mem::transmute(vc)
+                            });
+                            // println!("vc {:?}", vc);
+                        }
+                    }
+                }
                 // }
             }
             _ => (),
