@@ -44,14 +44,20 @@ fn main() {
 
     // let unit =
     // AVAudioUnit::new_with_component_description_tx(desc, Default::default(), &tx);
-
+    use avfoundation_sys::AUAudioUnitExt;
     let unit = AVAudioUnitMIDIInstrument::new_with_audio_component_description(desc);
-
-
-    unit.au_audio_unit().request_view_controller_fn(move |vc| {
-        // let z = tx.send(avfoundation::AVFoundationEvent::RequestViewController(vc));
-        println!("request view controller");
+    let tx1 = tx.clone();
+    unit.au_audio_unit().request_view_controller_async(move |controller| {
+        println!("callback");
+        tx1.send(1);
+        // let _ = tx1.send(controller.to_owned());
     });
+
+
+    // unit.au_audio_unit().request_view_controller_async(move |vc| {
+    //     // let z = tx.send(avfoundation::AVFoundationEvent::RequestViewController(vc));
+    //     println!("request view controller");
+    // });
 
     // let mut v = vec![];
     event_loop.run(move |event, _, control_flow| {
@@ -74,36 +80,39 @@ fn main() {
             }
             Event::MainEventsCleared => {
                 use avfoundation::AVFoundationEvent;
-                // if !loaded_vc {
-                    for e in rx.try_recv() {
-                        match e {
-                            AVFoundationEvent::AVAudioUnitHandler(unit) => {
-                                // match unit
-                            // {
-                                todo!();
-                                // Ok(unit) => {
-                                //     println!("loaded audiounit");
-                                //     unit.au_audio_unit().request_view_controller_tx(&tx);
-                                // }
-                                // Err(e) => {
-                                //     panic!("error {:?}", e);
-                                // }
-                            // },
-                        }
-                            AVFoundationEvent::RequestViewController(vc) => {
-                                println!("loaded vc");
-                                loaded_vc = true;
-                                let vc = vc.unwrap();
-                                // v.push(vc);
-                                // let vc = v.last().unwrap();
-                                window.window_with_content_view_controller(unsafe {
-                                    std::mem::transmute(vc)
-                                });
-                                // println!("vc {:?}", vc);
-                            }
-                        }
-                    // }
+                for e in rx.try_recv() {
+                    println!("controller");
                 }
+                // if !loaded_vc {
+                    // for e in rx.try_recv() {
+                    //     match e {
+                    //         AVFoundationEvent::AVAudioUnitHandler(unit) => {
+                    //             // match unit
+                    //         // {
+                    //             todo!();
+                    //             // Ok(unit) => {
+                    //             //     println!("loaded audiounit");
+                    //             //     unit.au_audio_unit().request_view_controller_tx(&tx);
+                    //             // }
+                    //             // Err(e) => {
+                    //             //     panic!("error {:?}", e);
+                    //             // }
+                    //         // },
+                    //     }
+                    //         AVFoundationEvent::RequestViewController(vc) => {
+                    //             println!("loaded vc");
+                    //             loaded_vc = true;
+                    //             let vc = vc.unwrap();
+                    //             // v.push(vc);
+                    //             // let vc = v.last().unwrap();
+                    //             window.window_with_content_view_controller(unsafe {
+                    //                 std::mem::transmute(vc)
+                    //             });
+                    //             // println!("vc {:?}", vc);
+                    //         }
+                    //     }
+                    // // }
+                // }
             }
             _ => (),
         }

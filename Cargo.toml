@@ -51,6 +51,7 @@ core-graphics = "0.22"
 dispatch = "0.2.0"
 scopeguard = "1.1"
 avfoundation = { path = "/Users/adamnemecek/Code/avfoundation-rs" }
+avfoundation-sys = { path = "/Users/adamnemecek/Code/avfoundation-sys" }
 
 [target.'cfg(target_os = "macos")'.dependencies.core-video-sys]
 version = "0.1.4"
