@@ -48,7 +48,7 @@ fn main() {
     // let _ = tx2.send(1);
     // tx2.send();
     // });
-    let unit = AVAudioUnit::new_with_component_description_tx(desc, Default::default(), &tx);
+    let unit1 = AVAudioUnit::new_with_component_description_tx(desc, Default::default(), &tx);
     use avfoundation_sys::AUAudioUnitExt;
     // let unit = AVAudioUnitMIDIInstrument::new_with_audio_component_description(desc);
 
@@ -91,7 +91,11 @@ fn main() {
                         AVFoundationEvent::AVAudioUnitHandler(unit) => match unit {
                             Ok(unit) => {
                                 println!("loaded audiounit");
-                                unit.au_audio_unit().request_view_controller_async_tx(&tx);
+                                let tx = tx.clone();
+                                unit.au_audio_unit().request_view_controller_async(move |controller| {
+                                    println!("request");
+                                    let _ = tx.send(avfoundation::AVFoundationEvent::RequestViewController(Some(controller.to_owned())));
+                                });
                             }
                             Err(e) => {
                                 panic!("error {:?}", e);
