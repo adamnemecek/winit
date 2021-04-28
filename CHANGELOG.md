@@ -1,11 +1,13 @@
 # Unreleased
 
+- On macOS, fix creating new windows when the application has a main menu.
 - On Windows, fix fractional deltas for mouse wheel device events.
 - On macOS, fix segmentation fault after dropping the main window.
 - On Android, `InputEvent::KeyEvent` is partially implemented providing the key scancode.
 - Added `is_maximized` method to `Window`.
 - On Windows, fix bug where clicking the decoration bar would make the cursor blink.
 - On Windows, fix bug causing newly created windows to erroneously display the "wait" (spinning) cursor.
+- On macOS, wake up the event loop immediately when a redraw is requested.
 - On Windows, change the default window size (1024x768) to match the default on other desktop platforms (800x600).
 - On Windows, fix bug causing mouse capture to not be released.
 - On Windows, fix fullscreen not preserving minimized/maximized state.
@@ -18,6 +20,11 @@
 - Added `WindowBuilder::with_position` to allow setting the position of a `Window` on creation. Supported on Windows, macOS and X11.
 - Added `Window::drag_window`. Implemented on Windows, macOS, X11 and Wayland.
 - On X11, bump `mio` to 0.7.
+- On Windows, added `WindowBuilderExtWindows::with_owner_window` to allow creating popup windows.
+- On Windows, added `WindowExtWindows::set_enable` to allow creating modal popup windows.
+- On macOS, emit `RedrawRequested` events immediately while the window is being resized.
+- Implement `Default`, `Hash`, and `Eq` for `LogicalPosition`, `PhysicalPosition`, `LogicalSize`, and `PhysicalSize`.
+- On macOS, initialize the Menu Bar with minimal defaults.
 
 # 0.24.0 (2020-12-09)
 
